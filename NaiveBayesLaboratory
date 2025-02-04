@@ -1,0 +1,95 @@
+class NaiveBayesClassifier:
+    def __init__(self):
+        # Initialize dictionaries to store the probability of each class and feature given the class
+        self.class_probabilities = {}  # Stores the probability of each class (P(class))
+        self.feature_probabilities = {}  # Stores the probability of each feature given the class (P(feature | class))
+
+    def fit(self, features, labels):
+        # Train the Naive Bayes model with the provided features and labels
+        total_samples = len(labels)  # Total number of samples in the training dataset
+        classes = list(set(labels))  # Get all unique class labels
+
+        # Calculate the class probabilities (P(class)) based on the frequency of each class
+        for label in classes:
+            self.class_probabilities[label] = labels.count(label) / total_samples
+
+        # Initialize a dictionary to store the feature probabilities for each class
+        self.feature_probabilities = {label: {} for label in classes}
+
+        # For each class, calculate the conditional probability of each feature given that class
+        for label in classes:
+            class_sample_count = labels.count(label)  # Count the number of samples in this class
+            feature_counts = {}
+
+            # Count the occurrences of feature values for each feature
+            for feature_index in range(len(features[0])):
+                feature_counts[feature_index] = {}
+
+            # Loop through each sample and count the feature values for the current class
+            for sample, sample_label in zip(features, labels):
+                if sample_label == label:
+                    for feature_index, feature_value in enumerate(sample):
+                        if feature_value not in feature_counts[feature_index]:
+                            feature_counts[feature_index][feature_value] = 0
+                        feature_counts[feature_index][feature_value] += 1
+
+            # Calculate the probability of each feature value given the class
+            for feature_index, counts in feature_counts.items():
+                self.feature_probabilities[label][feature_index] = {}
+                for feature_value, count in counts.items():
+                    self.feature_probabilities[label][feature_index][feature_value] = count / class_sample_count
+
+    def predict(self, test_features):
+        # Predict the class label for each test sample
+        predictions = []
+        for sample in test_features:
+            class_scores = {}  # Store the likelihood of each class
+
+            # For each class, calculate the likelihood of the sample given its features
+            for label in self.class_probabilities:
+                likelihood = self.class_probabilities[label]  # Start with the class probability
+
+                # Multiply by the probability of each feature value given the class
+                for feature_index, feature_value in enumerate(sample):
+                    if feature_value in self.feature_probabilities[label][feature_index]:
+                        likelihood *= self.feature_probabilities[label][feature_index][feature_value]
+                    else:
+                        # If the feature value hasn't been seen for the class, assign a small probability
+                        likelihood *= 1e-6
+
+                # Store the computed likelihood for this class
+                class_scores[label] = likelihood
+
+            # Predict the class with the highest likelihood
+            predictions.append(max(class_scores, key=class_scores.get))
+        return predictions
+
+
+if __name__ == "__main__":
+    # Example dataset with features: [Color, Type, Brand] and labels: "Expensive" or "Affordable"
+    X_train = [['Black', 'Laptop', 'Dell'],
+               ['Silver', 'Laptop', 'Apple'],
+               ['Black', 'Laptop', 'HP'],
+               ['Silver', 'Laptop', 'HP'],
+               ['Black', 'Laptop', 'Apple'],
+               ['Silver', 'Desktop', 'Dell'],
+               ['Black', 'Desktop', 'Apple'],
+               ['Silver', 'Laptop', 'Dell'],
+               ['Black', 'Laptop', 'Dell'],
+               ['Black', 'Desktop', 'HP']]
+    
+    y_train = ['Expensive', 'Expensive', 'Affordable', 'Affordable', 'Expensive', 'Affordable', 'Expensive', 'Affordable', 'Expensive', 'Affordable']
+
+    # Create an instance of the Naive Bayes classifier and train it on the dataset
+    model = NaiveBayesClassifier()
+    model.fit(X_train, y_train)
+
+    # Test 1: Predict if a black laptop of Dell brand is expensive or affordable
+    test1 = [['Black', 'Laptop', 'Dell']]
+    print("Test 1: Black, Laptop, Dell")
+    print("Is this laptop Expensive or Affordable? ", model.predict(test1))
+
+    # Test 2: Predict if a silver laptop of Apple brand is expensive or affordable
+    test2 = [['Silver', 'Laptop', 'Apple']]
+    print("\nTest 2: Silver, Laptop, Apple")
+    print("Is this laptop Expensive or Affordable? ", model.predict(test2))
