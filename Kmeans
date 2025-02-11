@@ -1,0 +1,98 @@
+import random  # Import the random module for random number generation
+import math    # Import the math module for mathematical operations
+
+class KMeans:
+    def __init__(self, k, max_iters=100):
+        """
+        Initialize the KMeans class with the number of clusters (k) and the maximum number of iterations.
+        - k: Number of clusters we want to form.
+        - max_iters: Maximum number of iterations to run the algorithm (default is 100).
+        """
+        self.k = k  # Set the number of clusters
+        self.max_iters = max_iters  # Set the maximum number of iterations
+        self.centroids = []  # Initialize an empty list to store the centroids
+
+    def initialize_centroids(self, data):
+        """
+        Randomly select k data points as initial centroids.
+        - data: The dataset from which centroids will be randomly chosen.
+        """
+        self.centroids = random.sample(data, self.k)  # Randomly sample 'k' data points as centroids
+
+    def euclidean_distance(self, point1, point2):
+        """
+        Compute the Euclidean distance between two points (the distance formula).
+        - point1, point2: Two points represented as lists of coordinates (e.g., [x, y]).
+        """
+        return math.sqrt(sum((p1 - p2) ** 2 for p1, p2 in zip(point1, point2)))  # Calculate the Euclidean distance
+
+    def assign_clusters(self, data):
+        """
+        Assign each data point to the nearest centroid (based on Euclidean distance).
+        - data: The dataset to be clustered.
+        """
+        clusters = [[] for _ in range(self.k)]  # Create an empty list for each of the k clusters
+        for point in data:
+            # Calculate the distance from each point to each centroid
+            distances = [self.euclidean_distance(point, centroid) for centroid in self.centroids]
+            # Find the index of the nearest centroid
+            cluster_index = distances.index(min(distances))  # The cluster of the nearest centroid
+            clusters[cluster_index].append(point)  # Assign the point to the closest cluster
+        return clusters  # Return the clusters with their points assigned
+
+    def compute_new_centroids(self, clusters):
+        """
+        Compute new centroids by averaging the points in each cluster.
+        If a cluster is empty, randomly select an existing centroid.
+        - clusters: The list of clusters with their assigned points.
+        """
+        new_centroids = []  # Initialize an empty list for the new centroids
+        for cluster in clusters:
+            if cluster:
+                # Compute the mean (average) of each dimension in the cluster
+                new_centroid = [sum(dim) / len(cluster) for dim in zip(*cluster)]  # Mean of points in the cluster
+            else:
+                # If the cluster is empty, randomly pick an existing centroid
+                new_centroid = random.choice(self.centroids)
+            new_centroids.append(new_centroid)  # Add the new centroid to the list
+        return new_centroids  # Return the list of new centroids
+
+    def fit(self, data):
+        """
+        Run the KMeans algorithm to compute the final centroids and clusters.
+        - data: The dataset to be clustered.
+        """
+        # Initialize centroids by randomly picking 'k' points from the data
+        self.initialize_centroids(data)
+
+        for _ in range(self.max_iters):  # Iterate for a maximum of 'max_iters' times
+            # Assign each data point to the nearest centroid
+            clusters = self.assign_clusters(data)
+            # Compute new centroids by averaging the points in each cluster
+            new_centroids = self.compute_new_centroids(clusters)
+
+            # Check if the centroids have converged (i.e., no change)
+            if new_centroids == self.centroids:
+                break  # If centroids have converged, exit the loop
+
+            # Update the centroids for the next iteration
+            self.centroids = new_centroids
+
+        return self.centroids, clusters  # Return the final centroids and the assigned clusters
+
+# Example dataset with 2-dimensional points
+data = [
+    [12.0, 30.0], [15.5, 28.0], [25.0, 50.0], [35.0, 60.0],
+    [13.0, 35.0], [40.0, 65.0], [34.0, 32.0], [45.0, 33.0],
+    [41.0, 38.0], [39.0, 55.0]
+]
+
+# Initialize the KMeans model with 3 clusters
+kmeans = KMeans(k=3)
+
+# Fit the KMeans model to the data, and get the final centroids and clusters
+centroids, clusters = kmeans.fit(data)
+
+# Output the results: the final centroids and the points in each cluster
+print("Final Centroids:", centroids)
+print("Clusters:", clusters)
