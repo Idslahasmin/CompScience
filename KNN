@@ -1,0 +1,95 @@
+class KNN:
+    def __init__(self, k):
+        """
+        Initialize the KNN model with the number of nearest neighbors (k).
+        - k: The number of neighbors to consider when making predictions.
+        """
+        self.k = k  # Set the number of neighbors (k)
+        self.data = []  # Initialize an empty list to store training data
+    
+    def euclidean_distance(self, point1, point2):
+        """
+        Calculate the Euclidean distance between two points.
+        - point1, point2: The two points whose distance needs to be calculated.
+        """
+        sum_sq = 0  # Variable to store the sum of squared differences
+        # Iterate through each dimension of the two points
+        for p1, p2 in zip(point1, point2):
+            sum_sq += (p1 - p2) ** 2  # Sum of squared differences
+        return sum_sq ** 0.5  # Return the square root of the sum, which gives the Euclidean distance
+    
+    def fit(self, data, labels):
+        """
+        Store the training data and their corresponding labels.
+        - data: The training data (list of data points).
+        - labels: The labels corresponding to each data point.
+        """
+        self.data = []  # Reset the stored data
+        for i in range(len(data)):
+            self.data.append((data[i], labels[i]))  # Store each data point with its label as a tuple
+    
+    def predict(self, points):
+        """
+        Predict the labels for a list of data points using KNN algorithm.
+        - points: A list of data points that we want to classify.
+        """
+        predictions = []  # List to store the predicted labels for each point
+        for point in points:
+            distances = []  # List to store the distances from the point to each training data point
+            # Calculate the distance between the current point and each training data point
+            for data_point, label in self.data:
+                distance = self.euclidean_distance(point, data_point)  # Compute the distance
+                distances.append((distance, label))  # Store the distance with the corresponding label
+            
+            # Manually sort the distances in ascending order (by distance)
+            for i in range(len(distances)):
+                for j in range(i + 1, len(distances)):
+                    if distances[i][0] > distances[j][0]:  # If distance[i] > distance[j], swap them
+                        distances[i], distances[j] = distances[j], distances[i]
+            
+            # Select the labels of the k nearest neighbors
+            nearest_labels = [distances[i][1] for i in range(self.k)]  # Extract the labels of the nearest neighbors
+            
+            # Count the occurrences of each label in the nearest neighbors
+            label_counts = {}
+            for label in nearest_labels:
+                if label in label_counts:
+                    label_counts[label] += 1  # If the label is already in the dictionary, increment its count
+                else:
+                    label_counts[label] = 1  # Otherwise, add the label with a count of 1
+            
+            # Find the label with the highest count (the most common label)
+            most_common = None
+            max_count = 0
+            for label, count in label_counts.items():
+                if count > max_count:  # If this label has the highest count, update the most_common label
+                    most_common = label
+                    max_count = count
+            
+            predictions.append(most_common)  # Add the most common label to the predictions list
+        
+        return predictions  # Return the list of predicted labels for the input points
+
+
+# New example training data with corresponding labels
+data = [
+    [2.0, 3.0], [3.5, 4.0], [6.0, 7.0], [8.0, 5.5],
+    [2.5, 2.5], [7.5, 8.0], [6.5, 4.5], [9.0, 6.0],
+    [7.0, 2.5], [5.5, 3.5], [3.0, 3.5], [8.5, 6.5]
+]
+labels = ['X', 'X', 'Y', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'X', 'X', 'Y']
+
+# New example test points to predict
+test_points = [[2.2, 2.8], [6.5, 6.0], [4.0, 4.5], [8.0, 7.0]]
+
+# Initialize the KNN model with 3 neighbors (k=3)
+knn = KNN(k=3)
+
+# Train the KNN model using the training data and labels
+knn.fit(data, labels)
+
+# Predict the labels for the test points
+predictions = knn.predict(test_points)
+
+# Output the predictions
+print("Predictions:", predictions)
